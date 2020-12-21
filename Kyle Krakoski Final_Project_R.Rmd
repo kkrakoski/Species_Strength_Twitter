@@ -1,0 +1,53 @@
+---
+title: "Tweet Count Data Analysis"
+author: "Kyle Krakoski"
+date: "12/15/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggformula)
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+```
+
+```{r}
+daily_tweet_counts = read.csv('Tweet_Count_By_Day_for_R.csv', fileEncoding="UTF-8-BOM")
+tweet_counts_df = data.frame(daily_tweet_counts, na.omit = TRUE) #Creates a dataframe, ignores NA values
+
+reorder_Days <- factor(tweet_counts_df$Day, level = c('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Saturday')) #Used to reorder the x-axis, so days display chronologically instead of alphabetically
+ggplot(data = tweet_counts_df, aes(x=reorder_Days, y= Count))+ #Creates a scatterplot of the raw data
+  labs(title = 'Counts for Tweets About Deer in Colorado by Day', x = 'Day of the Week', y = 'Tweet Counts')+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_dotplot(binaxis = "y", stackdir = "center", color = "black", fill = "blue") #Since Monday had the same count for both samplings, reformatted the scatterplot to show equal tweet counts side by side.
+  
+```
+```{r}
+avg_count_df = data.frame(aggregate(Count~Day,data=tweet_counts_df,FUN=mean)) #Computes the average tweet count by day of the week and sets it to a dataframe
+avg_count_df$Day =  reorder_Days <- factor(avg_count_df$Day, level = c('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday','Friday', 'Saturday')) #Reorders day of the week chronologically
+
+gf_col(Count~reorder_Days, data = avg_count_df, color = "black", fill = "darkgreen")+ #Creates a bar graph of the average count data
+  labs(title = 'Average Tweet Counts by Day of the Week', x = 'Day of the Week', y = 'Average Tweet Count')+
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+
+
+```{r}
+anova_test <- tweet_counts_df %>% anova_test(Count ~ Day) #ANOVA test on my data
+anova_test
+tukey_test <- tweet_counts_df %>% tukey_hsd(Count ~ Day) #Unnecessary since ANOVA test failed to reject the null hypothesis, but included as it would be the next step if null hypothesis was rejected.
+tukey_test
+
+```
+
